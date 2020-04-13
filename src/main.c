@@ -186,7 +186,7 @@ int Menu_Main(void)
     OSScreenFlipBuffersEx(0);
     OSScreenFlipBuffersEx(1);
 
-    int res = IOSUHAX_Open();
+    int res = IOSUHAX_Open(NULL);
     if(res < 0)
     {
         console_printf(1, "IOSUHAX_open failed\n");
