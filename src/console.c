@@ -137,7 +137,7 @@ uint32_t console_acquire(void *context)
 
     OSScreenInit();
     OSScreenSetBufferEx(0, MEMAllocFromFrmHeapEx(heapMEM1, OSScreenGetBufferSizeEx(0), 4));
-    OSScreenSetBufferEx(1, MEMAllocFromFrmHeapEx(heapMEM1, OSScreenGetBufferSizeEx(0), 4));
+    OSScreenSetBufferEx(1, MEMAllocFromFrmHeapEx(heapMEM1, OSScreenGetBufferSizeEx(1), 4));
     OSScreenEnableEx(0, 1);
     OSScreenEnableEx(1, 1);
 
