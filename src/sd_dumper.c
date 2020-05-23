@@ -1,18 +1,16 @@
+#include <coreinit/time.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <sys/dirent.h>
-#include "dynamic_libs/os_functions.h"
-#include "dynamic_libs/fs_functions.h"
+#include <limits.h>
 #include "fs/fs_utils.h"
 #include "main.h"
+#include "console.h"
 
 #define BUFFER_SIZE     0x80000
-
-void console_printf(int newline, const char *format, ...);
-int checkCancel(void);
 
 static int DumpFile(char *pPath, const char * output_path)
 {
@@ -50,19 +48,19 @@ static int DumpFile(char *pPath, const char * output_path)
 
     unsigned int size = 0;
     unsigned int ret;
-    u32 passedMs = 1;
-    u64 startTime = OSGetTime();
+    uint32_t passedMs = 1;
+    OSTime startTime = OSGetTime();
 
     // Copy rpl in memory
     while ((ret = fread(dataBuf, 0x1, BUFFER_SIZE, pReadFile)) > 0)
     {
-        passedMs = (OSGetTime() - startTime) * 4000ULL / BUS_SPEED;
+        passedMs = (uint32_t)OSTicksToMilliseconds(OSGetTime() - startTime);
         if(passedMs == 0)
             passedMs = 1; // avoid 0 div
 
         fwrite(dataBuf, 0x01, ret, pWriteFile);
         size += ret;
-        console_printf(0, " %s - 0x%X (%i kB/s) (%s)\r", pFilename, size, (u32)(((u64)size * 1000) / ((u64)1024 * passedMs)), pSlash);
+        console_printf(0, " %s - 0x%X (%i kB/s) (%s)\r", pFilename, size, (uint32_t)(((uint64_t)size * 1000) / ((uint64_t)1024 * passedMs)), pSlash);
     }
 
     fclose(pWriteFile);
@@ -84,7 +82,7 @@ int DumpDir(char *pPath, const char * target_path)
     }
 
     {
-        char *targetPath = (char*)malloc(FS_MAX_FULLPATH_SIZE);
+        char *targetPath = (char*)malloc(PATH_MAX);
         if(!targetPath)
         {
             console_printf(1, "no memory\n");
@@ -93,7 +91,7 @@ int DumpDir(char *pPath, const char * target_path)
         }
 
         char *pSlash = strchr(pPath, '/');
-        snprintf(targetPath, FS_MAX_FULLPATH_SIZE, "%s%s", target_path, pSlash);
+        snprintf(targetPath, PATH_MAX, "%s%s", target_path, pSlash);
         CreateSubfolder(targetPath);
         free(targetPath);
     }
@@ -107,7 +105,7 @@ int DumpDir(char *pPath, const char * target_path)
             break;
 
         int len = strlen(pPath);
-        snprintf(pPath + len, FS_MAX_FULLPATH_SIZE - len, "/%s", dirent->d_name);
+        snprintf(pPath + len, PATH_MAX - len, "/%s", dirent->d_name);
 
         char *pSlash = strchr(pPath, '/');
 
@@ -127,8 +125,8 @@ int DumpDir(char *pPath, const char * target_path)
         }
         else
         {
-            char *targetPath = (char*)malloc(FS_MAX_FULLPATH_SIZE);
-            snprintf(targetPath, FS_MAX_FULLPATH_SIZE, "%s%s", target_path, pSlash);
+            char *targetPath = (char*)malloc(PATH_MAX);
+            snprintf(targetPath, PATH_MAX, "%s%s", target_path, pSlash);
 
             DumpFile(pPath, targetPath);
             free(targetPath);
